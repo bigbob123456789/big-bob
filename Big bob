@@ -1,0 +1,117 @@
+import pygame
+import random
+
+# Initialize pygame
+pygame.init()
+
+# Set up the game window
+screen_width = 640
+screen_height = 480
+screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption("Jump for Coins")
+
+# Load the images
+player_image = pygame.image.load("yellow_man.png").convert_alpha()
+coin_image = pygame.image.load("coin.png").convert_alpha()
+
+# Define some constants
+gravity = 0.5
+jump_speed = 10
+coin_speed = 5
+coin_spawn_rate = 0.02
+
+# Define the player class
+class Player(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = player_image
+        self.rect = self.image.get_rect()
+        self.rect.x = screen_width / 2
+        self.rect.y = screen_height - self.rect.height
+        self.velocity = 0
+    
+    def update(self):
+        # Apply gravity to the player's velocity
+        self.velocity += gravity
+        
+        # Move the player vertically based on their velocity
+        self.rect.y += self.velocity
+        
+        # Don't let the player fall below the bottom of the screen
+        if self.rect.y > screen_height - self.rect.height:
+            self.rect.y = screen_height - self.rect.height
+            self.velocity = 0
+    
+    def jump(self):
+        # Make the player jump by setting their velocity to a negative value
+        self.velocity = -jump_speed
+
+# Define the coin class
+class Coin(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = coin_image
+        self.rect = self.image.get_rect()
+        self.rect.x = random.randint(0, screen_width - self.rect.width)
+        self.rect.y = -self.rect.height
+        self.speed = coin_speed
+    
+    def update(self):
+        # Move the coin downwards
+        self.rect.y += self.speed
+    
+    def check_offscreen(self):
+        # Check if the coin has gone off the bottom of the screen
+        if self.rect.y > screen_height:
+            self.kill()
+
+# Set up the sprite groups
+all_sprites = pygame.sprite.Group()
+coins = pygame.sprite.Group()
+
+# Create the player object
+player = Player()
+all_sprites.add(player)
+
+# Set up the game loop
+clock = pygame.time.Clock()
+score = 0
+running = True
+while running:
+    # Handle events
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                player.jump()
+    
+    # Spawn coins randomly
+    if random.random() < coin_spawn_rate:
+        coin = Coin()
+        all_sprites.add(coin)
+        coins.add(coin)
+    
+    # Update the sprites
+    all_sprites.update()
+    
+    # Check for collisions between the player and coins
+    hits = pygame.sprite.spritecollide(player, coins, True)
+    for hit in hits:
+        score += 1
+    
+    # Remove any coins that have gone off the bottom of the screen
+    for coin in coins:
+        coin.check_offscreen()
+    
+    # Draw the sprites
+    screen.fill((0, 0, 0))
+    all_sprites.draw(screen)
+    
+    # Draw the score
+    font = pygame.font.Font(None, 36)
+    text = font.render("Score: " + str(score), True, (255, 255, 255))
+    screen.blit(text, (10, 10))
+    
+    # Update the display
+    pygame.display.flip
